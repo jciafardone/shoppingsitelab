@@ -6,10 +6,11 @@ put melons in a shopping cart.
 Authors: Joel Burton, Christian Fernandez, Meggie Mahnken, Katie Byers.
 """
 
-from flask import Flask, render_template, redirect, flash, session
+from flask import Flask, render_template, redirect, flash, session, request
 import jinja2
 
 import melons
+import customers
 
 app = Flask(__name__)
 
@@ -110,6 +111,8 @@ def show_shopping_cart():
     # Make sure your function can also handle the case wherein no cart has
     # been added to the session
 
+    #conditional to create empty dictionary for cart if it doesnt exist
+
     cart = session["cart"]
     melon_list = []
     total_cost = 0
@@ -124,7 +127,7 @@ def show_shopping_cart():
         total_price = price * quantity
         total_cost += total_price
         this_melon.quantity = quantity
-        this_melon.cost = total_cost
+        this_melon.cost = total_price
         # name = this_melon.common_name
         melon_list.append(this_melon)
     
@@ -132,7 +135,7 @@ def show_shopping_cart():
     print(melon_list)
     # print(total_cost)
 
-    return render_template("cart.html", quantity=quantity, price=price, total_cost=total_cost, cart=cart, melon_list=melon_list)
+    return render_template("cart.html", total_cost=total_cost, melon_list=melon_list)
 
 
 @app.route("/login", methods=["GET"])
@@ -164,7 +167,19 @@ def process_login():
     # - if they don't, flash a failure message and redirect back to "/login"
     # - do the same if a Customer with that email doesn't exist
 
-    return "Oops! This needs to be implemented"
+    username = request.form.get('email')
+    password = request.form.get('password')
+
+    customer_to_check = customers.get_by_email(username)
+
+    if username != customer_to_check.email:
+        flash("No user with that email found.")
+        print(username)
+        print(password)
+        print(customer_to_check)
+        return redirect("/login")
+    else:
+        return "login"
 
 
 @app.route("/checkout")
