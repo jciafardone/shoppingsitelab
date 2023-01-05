@@ -6,7 +6,7 @@ put melons in a shopping cart.
 Authors: Joel Burton, Christian Fernandez, Meggie Mahnken, Katie Byers.
 """
 
-from flask import Flask, render_template, redirect, flash
+from flask import Flask, render_template, redirect, flash, session
 import jinja2
 
 import melons
@@ -50,7 +50,7 @@ def show_melon(melon_id):
     Show all info about a melon. Also, provide a button to buy that melon.
     """
 
-    melon = melons.get_by_id("meli")
+    melon = melons.get_by_id(melon_id)
     print(melon)
     return render_template("melon_details.html",
                            display_melon=melon)
@@ -74,8 +74,18 @@ def add_to_cart(melon_id):
     # - increment the count for that melon id by 1
     # - flash a success message
     # - redirect the user to the cart page
+    
+    if "cart" not in session:
+        session["cart"] = {}
 
-    return "Oops! This needs to be implemented!"
+    if melon_id in session["cart"]:
+        session["cart"][melon_id] += 1
+    else:
+        session["cart"][melon_id] = 1
+        
+    flash("Thing has been added")
+    print(session["cart"].items())
+    return redirect("/cart")
 
 
 @app.route("/cart")
@@ -100,7 +110,29 @@ def show_shopping_cart():
     # Make sure your function can also handle the case wherein no cart has
     # been added to the session
 
-    return render_template("cart.html")
+    cart = session["cart"]
+    melon_list = []
+    total_cost = 0
+
+    if "cart" not in session:
+        raise ValueError("No carts currently.")
+        
+    for melon in cart:
+        this_melon = melons.get_by_id(melon)
+        price = this_melon.price
+        quantity = cart[melon]
+        total_price = price * quantity
+        total_cost += total_price
+        this_melon.quantity = quantity
+        this_melon.cost = total_cost
+        # name = this_melon.common_name
+        melon_list.append(this_melon)
+    
+    print(cart)
+    print(melon_list)
+    # print(total_cost)
+
+    return render_template("cart.html", quantity=quantity, price=price, total_cost=total_cost, cart=cart, melon_list=melon_list)
 
 
 @app.route("/login", methods=["GET"])
